@@ -1,0 +1,410 @@
+---
+title: "Express Project Setup"
+publishedAt: "2024-07-07"
+summary: "Creating an opinionated template for a new Express Project"
+category: "mern"
+---
+
+📝 🚀 Checklist for the express project initial setup
+
+- [x] Git setup
+- [x] Node version manager setup
+- [x] NodeJS project setup
+- [x] Typescript setup
+- [x] Prettier setup
+- [x] Eslint setup
+- [x] Git hooks setup
+- [x] Application config setup
+- [x] ExpressJS app setup
+- [x] Logger setup
+- [x] Error handling setup
+- [x] Tests setup
+
+Start by cd'ing into your template folder
+
+## Git setup
+
+1. Setting up .gitignore: you can either get it manually from [this](https://github.com/github/gitignore) repo OR if you're using VSCode, use [this](https://marketplace.visualstudio.com/items?itemName=codezombiech.gitignore) extension to generate it for you.
+
+2. Do a `git init`, add & then commit your changes.
+
+3. Push this repository to the remote.
+
+## Node version manager setup
+
+1. Install [nvm](https://github.com/nvm-sh/nvm) for your platform.
+
+2. Use the latest LTS version of the time.
+
+3. Create a file called `.nvmrc` and write the version you're using eg: `v20.15.0`
+
+4. Then open a terminal and run `nvm use`, if it fails with an error saying "version not yet installed" then do `nvm install` followed by `nvm use`.
+
+5. Add, commit & push your changes.
+
+## NodeJS project setup
+
+1. Do an `npm init` and answer all the questions.
+
+2. Create a `src` folder.
+
+3. Add, commit & push your changes.
+
+## Typescript setup
+
+1. Run `npm i -D typescript`.
+
+2. Run `npx tsc --init`.
+
+3. Uncomment `rootDir` in `tsconfig.json` & set it's value to "./src".
+
+4. Uncomment `outDir` in `tsconfig.json` & set it's value to "./dist".
+
+5. Install types for node `npm i -D @types/node`.
+
+6. Add, commit & push your changes.
+
+## Prettier setup (follow official docs)
+
+1. Install it with the `--save-exact` flag: `npm i -D --save-exact prettier`.
+
+2. Create an empty `.prettierrc` file and add empty object `{}` to it.
+3. Create an empty `.prettierignore` file and add:
+
+   ```
+      build
+      coverage
+   ```
+
+4. Now, you can manually check for formatting issues by running: `npx prettier . --check` & fix them all by running: `npx prettier . --write`.
+
+5. You can add in `package.json` "scripts" to aid in CI/CD pipelines:
+
+   ```json
+      "format:check": "prettier . --check",
+      "format:fix": "prettier . --write"
+   ```
+
+6. Optionally add the following config to `.prettierrc` (and more):
+
+   ```json
+   {
+     "arrowParens": "avoid",
+     "printWidth": 80,
+     "tabWidth": 2,
+     "semi": false,
+     "singleQuote": true,
+     "jsxSingleQuote": true,
+     "trailingComma": "none",
+     "proseWrap": "always"
+   }
+   ```
+
+7. Add, commit & push your changes.
+
+## Eslint setup (follow official docs)
+
+1. Run `npm install --save-dev eslint @eslint/js @types/eslint__js typescript typescript-eslint eslint-config-prettier`
+
+2. Create a file `.eslint-config.js` ans paste the following:
+
+   ```js
+   // @ts-check
+
+   import eslint from "@eslint/js";
+   import tseslint from "typescript-eslint";
+   import eslintConfigPrettier from "eslint-config-prettier";
+
+   export default tseslint.config(
+     eslint.configs.recommended,
+     ...tseslint.configs.recommendedTypeChecked,
+     eslintConfigPrettier,
+     {
+       languageOptions: {
+         parserOptions: {
+           project: true,
+           tsconfigRootDir: import.meta.dirname,
+         },
+       },
+     },
+     {
+       ignores: ["dist/*", "eslint.config.js"],
+     },
+     {
+       rules: {
+         "no-console": "error",
+       },
+     }
+   );
+   ```
+
+3. Add the followings to scripts in `package.json`:
+
+   ```json
+      "lint": "eslint .",
+      "lint:fix": "eslint . --fix"
+   ```
+
+4. Add, commit & push your changes.
+
+## Git hooks setup
+
+1. Install husky
+
+   ```bash
+      npm install --save-dev husky
+   ```
+
+2. Run `npx husky init`
+
+3. Modify `.husky/pre-commit` file to whatever you want to run before every commit. We'll replace all it's content with:
+
+   ```bash
+      npx lint-staged
+   ```
+
+4. Install lint-staged to only run pre-commit hooks on staged code:
+
+   ```bash
+      npm install --save-dev lint-staged
+   ```
+
+5. Add this to your `package.json`:
+
+   ```json
+      "lint-staged": {
+         "*.ts": [
+               "npm run lint:fix",
+               "npm run format:fix"
+         ]
+      }
+   ```
+
+6. Add, commit & push your changes.
+
+## Application config setup
+
+1. Install dotenv: `npm i dotenv`
+
+2. Create a `.env` file & put all your secrets as key-value pairs.
+
+3. Optionally, also create a `.env.example` file & put all your secrets but with fake values.
+
+4. Create `src/config/index.ts` and paste the following(add your own values):
+
+   ```ts
+   import { config } from "dotenv";
+   config();
+
+   const { PORT, NODE_ENV } = process.env; // later if you want to change the way you're getting env variables (eg. from a file), you can just change this line
+
+   export const Config = {
+     PORT,
+     NODE_ENV,
+   };
+   ```
+
+5. Add, commit & push your changes.
+
+## ExpressJS App Setup
+
+1. Create an `app.ts` file inside the `src` folder.
+2. Install express & it's type declarations: `npm i express` & `npm i -D @types/express`
+3. Put minimal code inside the `app.ts` and export the app.
+
+   ```ts
+   import express from "express";
+   const app = express();
+   app.get("/", (req, res) => {
+     res.send("Welcome to Auth service");
+   });
+   export default app;
+   ```
+
+If you see ESLint, try `ctrl+shift+p` -> Restart ESLint server.
+
+4. Create a new file `src/server.ts` and import the app there.
+
+   ```ts
+   import app from "./app";
+   import { Config } from "./config";
+
+   const startServer = () => {
+     const PORT = Config.PORT;
+     try {
+       // eslint-disable-next-line no-console
+       app.listen(PORT, () => console.log(`Listening on port ${PORT}`));
+     } catch (error) {
+       // eslint-disable-next-line no-console
+       console.error(error);
+       process.exit(1);
+     }
+   };
+
+   startServer();
+   ```
+
+5. Change the dev script in `package.json` to:
+
+   ```json
+   "dev": "nodemon src/server.ts",
+   ```
+
+6. Install `nodemon` & `ts-node`
+
+   ```bash
+   npm i -D ts-node nodemon
+   ```
+
+   Try running `npm run dev` to see if it works.
+
+7. Add, commit & push your changes.
+
+## Logger setup
+
+1. Install Winston & its types.
+
+   ```bash
+   npm i winston
+   npm i -D @types/winston
+   ```
+
+2. Create `src/config/logger.ts` and paste:
+
+   ```tsx
+   import winston from "winston";
+   import { Config } from ".";
+
+   const logger = winston.createLogger({
+     level: "info",
+     defaultMeta: {
+       serviceName: "auth-service",
+     },
+     transports: [
+       new winston.transports.File({
+         dirname: "logs",
+         filename: "combined.log",
+         level: "info",
+         silent: Config.NODE_ENV !== "production",
+       }),
+       new winston.transports.File({
+         dirname: "logs",
+         filename: "error.log",
+         level: "error",
+         silent: Config.NODE_ENV !== "production",
+       }),
+       new winston.transports.Console({
+         level: "info",
+         format: winston.format.combine(
+           winston.format.timestamp(),
+           winston.format.json()
+         ),
+         silent: Config.NODE_ENV !== "production",
+       }),
+     ],
+   });
+
+   export default logger;
+   ```
+
+In your `server.ts` file, replace the `console.log` with `logger.info` and `console.error` with `logger.error`. The file will now look like this:
+
+```tsx
+import app from "./app";
+import { Config } from "./config";
+import logger from "./config/logger";
+
+const startServer = () => {
+  const PORT = Config.PORT;
+  try {
+    app.listen(PORT, () => logger.info(`Listening on port ${PORT}`));
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      logger.error(error.message);
+      setTimeout(() => process.exit(1), 1000);
+    }
+  }
+};
+
+startServer();
+```
+
+3. Add, commit & push your changes.
+
+## Error handling setup
+
+1. Install `http-errors`
+
+   ```bash
+   npm i http-errors
+   ```
+
+2. Add the following global error handler as the last middleware in `app.ts`:
+
+   ```ts
+   // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   app.use(
+     (err: HttpError, req: Request, res: Response, next: NextFunction) => {
+       logger.error(err.message);
+       const statusCode = err.statusCode || 500;
+       res.status(statusCode).json({
+         errors: [
+           {
+             type: err.name,
+             msg: err.message,
+             path: "",
+             location: "",
+           },
+         ],
+       });
+     }
+   );
+   ```
+
+3. Add, commit & push your changes.
+
+## Tests setup
+
+1. Run:
+
+   ```bash
+   npm i -D jest ts-jest @types/jest supertest @types/supertest
+
+   npx ts-jest config:init
+   ```
+
+2. Step 1 will result in a `jest.config.js` file, rename it's extension to `.mjs` and replace it's contents with:
+
+   ```js
+   /** @type {import('ts-jest').JestConfigWithTsJest} */
+   export default {
+     preset: "ts-jest",
+     testEnvironment: "node",
+   };
+   ```
+
+3. In your `package.json`, add another script:
+
+   ```json
+   "test": "jest --watch --runInBand"
+   ```
+
+4. Create a new file called either `app.spec.ts` or `app.test.ts` at the root of your project to test the jest setup.
+
+   ```ts
+   import request from "supertest";
+   import app from "./src/app";
+
+   describe("App", () => {
+     it("should return 200 status", async () => {
+       const response = await request(app).get("/").send();
+       expect(response.statusCode).toBe(200);
+     });
+   });
+   ```
+
+   Now run `npm run test` to check if it runs. It should run as well as pass.
+
+5. Add, commit & push your changes.
+
+That's it! Your template is ready, you can use it for all your future projects.

@@ -1,0 +1,218 @@
+---
+title: "Inheritance vs Composition"
+publishedAt: "2024-06-22"
+summary: "Example of Inheritance vs Composition in JS"
+category: "design patterns"
+---
+
+Let us first look at an example of how we would achieve inheritance in ES5+
+
+```
+class Animal {
+    constructor(name, energy) {
+        this.name = name
+        this.energy = energy
+    }
+    eat(amount) {
+        console.log(`${this.name} is eating.`)
+        this.energy += amount
+    }
+    sleep(length) {
+        console.log(`${this.name} is sleeping.`)
+        this.energy += length
+    }
+    play(length) {
+        console.log(`${this.name} is playing.`)
+        this.energy -= length
+    }
+}
+
+class Dog extends Animal {
+    constructor(name, energy, breed) {
+        super(name, energy)
+        this.breed = breed
+    }
+    bark() {
+        console.log('Woof Woof!')
+        this.energy -= .1
+    }
+}
+
+class Cat extends Animal {
+    constructor(name, energy, declawed) {
+        super(name, energy)
+        this.declawed = declawed
+    }
+    meow() {
+        console.log('Meow!')
+        this.energy -= .1
+    }
+}
+```
+
+We can visualize the hierarchy like so
+
+```
+Animal
+    name
+    energy
+    eat()
+    sleep()
+    play()
+
+    Dog
+        breed
+        bark()
+
+    Cat
+        declawed
+        meow()
+```
+
+Let's say later on, you are tasked with adding another entity to the system: User.
+
+```
+User
+    email
+    username
+    pets
+    friends
+    adopt()
+    befriend()
+
+Animal
+    name
+    energy
+    eat()
+    sleep()
+    play()
+
+    Dog
+        breed
+        bark()
+
+    Cat
+        declawed
+        meow()
+```
+
+Everything works fine & dandy till now. However, your project manager now tells you to add the ability of eat, sleep & play to `User` as well. How would you do it? Here's how we would tackle this in OOP
+
+```
+Mammal
+    name
+    eat()
+    sleep()
+    play()
+
+    User
+        email
+        username
+        pets
+        friends
+        adopt()
+        befriend()
+
+    Animal
+        energy
+
+        Dog
+            breed
+            bark()
+
+        Cat
+            declawed
+            meow()
+```
+
+This looks pretty fragile because another entity had to be introduced which will now have it's own significance as the program grows. This anti-pattern is popularly called `God Object`. Hence, the problem with OOP is that entities have a meaning when you write them which can be changed later as the requirements change. These changes can crumble the class hierarchy structure.
+
+> I think the lack of reusability comes in object-oriented languages, not in functional languages. Because the problem with object-oriented languages is they've got all this implicit environment that they carry around with them. You wanted a banana but what you got was a gorilla holding the banana and the entire jungle.
+>
+> -- <cite>Joe Armstrong (Creator of Erlang)</cite>
+
+Rather than thinking what things are, let's shift to what things do.
+
+- A dog is a sleeper, eater, player & barker.
+- A cat is a sleeper, eater, player & meower.
+
+Instead of having these methods tightly coupled to a class, we can have have them as functions and compose them together whenever we need. Great! But how do we operate on a specific instance then? Well, we pass the instance directly to our functions. Closure lets the functions `remember` the state(instance) that was passed.
+
+```
+const eater = (state) => ({
+    eat(amount) {
+        console.log(`${state.name} is eating.`)
+        state.energy += amount
+    }
+})
+const sleeper = (state) => ({
+    sleep(length) {
+        console.log(`${state.name} is sleeping.`)
+        state.energy += length
+    }
+})
+const player = (state) => ({
+    play(length) {
+        console.log(`${state.name} is eating.`)
+        state.energy -= length
+    }
+})
+const barker = (state) => ({
+    bark(length) {
+        console.log(`Woof Woof!`)
+        state.energy -= .1
+    }
+})
+const meower = (state) => ({
+    meow(length) {
+        console.log(`Meow!`)
+        state.energy -= .1
+    }
+})
+```
+
+Example of Dog being a sleeper, eater, player & barker
+
+```
+function Dog(name, energy, breed) {
+    let dog = {
+        name,
+        energy,
+        breed
+    }
+
+    return Object.assign(
+        dog,
+        eater(dog),
+        sleeper(dog),
+        player(dog),
+        barker(dog)
+    )
+}
+
+const dog = Dog('Dog', 10, 'Bulldog')
+dog.eat(10)
+dog.bark()
+```
+
+Now users can also eat, sleep & play
+
+```
+function User(email, username) {
+    let user = {
+        email,
+        username,
+        pets: [],
+        friends: []
+    }
+
+    return Object.assign(
+        user,
+        eater(user),
+        sleeper(user),
+        player(user)
+    )
+}
+```
+
+Congratulations, you've freed yourself from tightly coupled inheritance structures.

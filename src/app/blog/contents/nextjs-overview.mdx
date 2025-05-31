@@ -1,0 +1,1097 @@
+---
+title: "NextJS Overview"
+publishedAt: "2024-06-23"
+summary: "Overview of NextJS"
+category: "react"
+---
+
+Three main features of NextJS
+
+- Routing
+- Pre-rendering
+  - Static Generation (Generates the HTML at build time)
+  - Server Side Rendering (Generates the HTML at request time)
+- API Endpoints
+
+## Pre-rendering
+
+In traditional react web apps (before React 18), the initial index.html coming from the server as a response is an empty HTML template. It's only after the JS bundle is downloaded when react executes and hydrates the page.
+
+In contrast, NextJS can pre-generate the HTML content before sending out the response to the client. This is called pre-rendering.
+
+## Styling
+
+1. Global CSS
+
+2. CSS Modules
+
+3. Tailwind CSS
+
+4. Sass
+
+5. CSS-in-JS
+
+## Deployment
+
+A NextJS app can be deployed to either a managed hosting provider like Vercel or self-hosted. Tip when self-hosting: If you're using next/image, you can install sharp by doing npm i sharp in your project for better Image Optimization.
+
+When self-hosting, you have several choices:
+
+1. Node.js server: NextJS can be deployed to any hosting provider that supports Node.js (eg, AWS EC2). You just need to run `npm run build` followed by `npm run start` to start the Node.js server.
+
+2. Docker Image: A NextJS app can be deployed to any hosting provider that supports Docker containers.
+
+3. Static HTML Export: This approach enables you to host your app on any static hosting provider (or CDN). To enable this, you have to pass a flag to your next config that converts your code into static files during the build process. Any & all server operations, be it fetching data from third-party, reading/writing files, etc will run on the server during the build process only. In your next config, add this flag:
+
+```json
+output: "export"
+```
+
+## Routing
+
+We'll cover only the app router which was introduced with NextJS 13. It supports layouts, nested routing, suspense, streaming, error boundaries & more. App router can in-fact co-exist with the old pages router granted they don't have any path conflicts.
+
+You have a top-level `app` directory in your project that renders the page for "/" route.
+
+![/images/nextjs-route-segments](/images/nextjs-route-segments.svg)
+
+A path in NextJS consists of domain & segment(s) delimited by "/". The first "/" is the root route or root segment. NextJS uses file-based routing, meaning you create new folders (inside `app` directory) & files to create new routes. Folders are used to create route segments and files are used to create the UI of the page that matches that route. For example, if you want to create a path that matches a path `<domain>/about` then you create an "about" folder inside the "app" directory. Inside the "about" folder, create a new file called `page.tsx`, this file will be a react component that describes the UI of that page. Note that a route segment is not publicly accessible until you create a page.tsx for it.
+
+Nested routes can be created by nesting the folder-file hierarchy described above. `page.tsx` is not the only thing you get in every route segment, you also get a `layout.tsx` file to describe UI that can be shared across multiple pages. The layout component accepts a `children` prop that is populated with child segments or child layouts if they exist. By default, layouts are `server components` but they can also be `client components`. A root layout is required and is shared between all the pages in our app. The root layout cannot be a client component, it has to be a server component. A layout segment is shared to the level it belongs to and below.
+
+Templates are very similar to layouts in terms of their shareability to pages at the same level or below but there is one difference. Layouts don't re-render but templates do re-render on navigation. Each time the page re-renders, a new instance of the template will be created. Hence, no state is preserved in a template. In a layout, state is preserved.
+
+A template can be used where you would want to:
+
+1. If you're using something that depends on useEffect or useState and you want to re-synchronize your state on re-render. Eg: logging page views, enter & exit animations, etc.
+
+2. To change the default framework behavior. For eg: you can use templates to re-render your fallback UI every time when using Suspense. Suspense boundaries inside layouts only show the fallback the first time the layout is loaded. For templates, the fallback is shown on each navigation.
+
+## Navigation
+
+NextJS app router uses client-side navigation. When the user navigates to a new sibling route, the whole page is not reloaded, instead, NextJS only updates the segment that has changed. This is called "partial rendering". Only the segments that have actually changed are fetched and rendered instead of sending the entire data from server to client every time the user changes the route. Partial rendering reduces the execution (or render) time as a result.
+
+In addition, as the user navigates around the app, the router saves the result of react server component payloads in a client-side cache that can be used in future to improve performance. There are 3 main ways to navigate in a NextJS app:
+
+1. Link Component
+
+```jsx
+import Link from "next/link";
+
+<Link href={"/"}>Go Home</Link>;
+```
+
+2. useRouter Hook (Client Components)
+
+```jsx
+import { useRouter } from "next/navigation";
+
+const router = useRouter();
+router.push("/contact");
+```
+
+3. redirect function (Server Components)
+
+```jsx
+import { redirect } from "next/navigation";
+
+const user = await fetchUser(params.id);
+if (!user) {
+  redirect("/login");
+}
+```
+
+The `Link` component pre-fetches the content for routes as soon as the component is visible in the viewport and stores the result in client-side cache. Pre-fetching is only enabled on production. It can also be disabled by passing `prefetch={false}` to the Link component. As a result of pre-fetching, a soft navigation happens that is near-instant.
+
+## Dynamic Routes
+
+When you have a route that can be dynamic e.g. path to blog posts, we should not have to create the folder-file pair for every blog post. We can do it using one folder-file pair if we use a dynamic segment which makes our route dynamic. Taking the blog posts example, we create a fixed segment by creating a folder called `posts`, then we create a folder `[slug]` and finally create a `page.tsx` file inside it. This will match `/posts/<whatever>`. The slug will be passed to the page as a prop if you're using a react server component.
+
+Now when we're using the dynamic routes, there's an optimization we can make to get the payload faster. By default, any path using dynamic routes is generated at request time, which means that when a user requests for a page, that's when the server generates its HTML and sends it back to the user. We can optimize this by having everything generated at build time itself so that it's just sent to the user when requested. That's possible only for the routes where we know what the `slug` value is. What we do is, we export an async function from `/posts/[slug]/page.tsx` called `generateStaticParams` which returns an object containing the slug value for that route.
+
+```jsx
+export async function generateStaticParams() {
+  const posts = await getAllPosts();
+
+  return posts.map((post) => ({ slug: post.slug }));
+}
+```
+
+### Catch-all segments
+
+NextJS docs explained these the best: "Dynamic Segments can be extended to catch-all subsequent segments by adding an ellipsis inside the brackets `[...segmentName]`." This enables us to catch multiple segments inside the params object which will now store these segments as an array.
+
+Route - `<domain>/posts/[...slug]/page.tsx`
+
+Example URL - `/posts/a/b/c`
+
+params - `{ slug: ['a', 'b', 'c'] }`
+
+### Optional Catch-all segments
+
+The only difference between these & catch-all segments is: Optional Catch-all segments match even when there is no dynamic segment present.
+
+Route - `<domain>/posts/[[...slug]]/page.tsx`
+
+Example URL - `/posts`
+
+params - `{}`
+
+## Route Groups
+
+At this point, you're already aware that creating a new folder inside the `app` directory that uses app router, will create a new private route segment and creating a `page.tsx` file inside will make it a public route segment. But what if we just want to logically group the folders together by creating certain folders that we don't want to act as route segments? This can be achieved by creating route groups. They help in organizing our code structure better, eg: you might want to have your auth, posts & marketing related routes separate. To create a route group, just create a folder whose name is wrapped in parens `()`, eg `(company)`. Now just create routes as you would normally. The added advantage apart from organization is that all the routes inside a route group opt-in to share `layout.tsx` & `loading.tsx` among other things without affecting the URL.
+
+![/images/nextjs-route-segments](/images/nextjs-route-segments.svg)
+
+## Suspense & Streaming
+
+According to React docs, "Suspense lets you display a fallback UI until its children have finished loading". Typically, you'll have its children doing async tasks which take some time to complete.
+
+```jsx
+<Suspense fallback={<Loading />}>
+  <SomeComponent />
+</Suspense>
+```
+
+In NextJS, you can add the fallback (loader) UI for each route segment (or route group) by creating a file called `loading.tsx` in that route segment/group's folder. Inside the `loading.tsx` is where you write the loader UI code. Note that all the nested route segments will use the same Suspense boundary. However, if you want to use `loading.tsx` AND have localized Suspense boundary, you can have that as well - Just wrap the code you want to have a specialized fallback UI for, in a Suspense component as you would do in a React component. In fact, when using `loading.tsx`, behind the scenes NextJS wraps your page component in a Suspense boundary and passes the component you exported in `loading.tsx` as the fallback component. It's not magic!
+
+Streaming allows NextJS to send the data to clients in chunks which can not only be displayed as HTML but also React can selectively start hydrating these chunks as they come. Streaming gives a perceived boost in performance as parts of the page can be displayed sooner, without waiting for all the data to load before any UI can be rendered. As per NextJS official docs, "Streaming works well with React's component model because each component can be considered a chunk. Components that have higher priority (e.g. product information) or that don't rely on data can be sent first (e.g. layout), and React can start hydration earlier. Components that have lower priority (e.g. reviews, related products) can be sent in the same server request after their data has been fetched."
+
+## Error Boundaries
+
+Much like Suspense & other features, Error boundaries are also a react-specific construct to catch rendering errors. An error boundary lets you display a fallback UI instead of the part that crashed. Usually used to display the error message to convey what possibly went wrong. Note that an Error Boundary HAS to be a class component and not functional component. To implement one, you need to provide `static getDerivedStateFromError` & `componentDidCatch` methods.
+
+```jsx
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(error) {
+    // Update state so the next render will show the fallback UI.
+    return { hasError: true };
+  }
+
+  componentDidCatch(error, info) {
+    // Example "componentStack":
+    //   in ComponentThatThrows (created by App)
+    //   in ErrorBoundary (created by App)
+    //   in div (created by App)
+    //   in App
+    logErrorToMyService(error, info.componentStack);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      // You can render any custom fallback UI
+      return this.props.fallback;
+    }
+
+    return this.props.children;
+  }
+}
+```
+
+Then you can wrap a part of your component tree with it:
+
+```jsx
+<ErrorBoundary fallback={<p>Something went wrong</p>}>
+  <Profile />
+</ErrorBoundary>
+```
+
+If the `Profile` component throws an error, it's contained within the Error Boundary which shows the fallback and our whole app doesn't crash. The error boundary can also provide a function to reset the state inside the error boundary and try to re-render the component that threw the error.
+
+In NextJS, you don't have to create an error boundary by explicitly creating a class like we did above. We can just create a file called `error.tsx` inside a route segment/group. This will automatically create a react error boundary that wraps your page.
+
+Usage:
+
+```jsx
+'use client' // Error components must be Client Components
+
+import { useEffect } from 'react'
+
+export default function Error({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string }
+  reset: () => void
+}) {
+  useEffect(() => {
+    // Log the error to an error reporting service
+    console.error(error)
+  }, [error])
+
+  return (
+    <div>
+      <h2>Something went wrong!</h2>
+      <button
+        onClick={
+          // Attempt to recover by trying to re-render the segment
+          () => reset()
+        }
+      >
+        Try again
+      </button>
+    </div>
+  )
+}
+```
+
+The exported function (Error) will be used as the fallback component in the generated react error boundary. It isolates the error to that specific segment of the page. Everything else above that error boundary remains interactive. In development, you'll have `error.message` but in production there'll be `error.digest` which is a hash of error that you can compare with the server logs. Calling `reset` will try to re-render the Error boundary's contents.
+
+Note that errors thrown in layout of same route segment won't be caught by the error boundary, this is because ErrorBoundary wraps only the page component, while layout wraps the ErrorBoundary. To catch the errors in layout, you have to create an error boundary in the parent route segment. In case you want to catch errors in root layout, you need to create a file called `global-error.tsx` in the root app directory.
+
+## Component Heirarchy
+
+The React components defined in special files of a route segment are rendered in a specific hierarchy:
+
+```jsx
+<Layout>
+  <Template>
+    <ErrorBoundary fallback={<Error />}>
+      <Suspense fallback={<Loading />}>
+        <ErrorBoundary fallback={<NotFound />}>
+          <Page />
+        </ErrorBoundary>
+      </Suspense>
+    </ErrorBoundary>
+  </Template>
+</Layout>
+```
+
+## Server vs Client Components
+
+Server components & Client components both render on the server. The only difference is that client components are also hydrated on the client side to add interactivity. By default, in NextJS, all components are React Server Components (RSC) by default. In order to make them client components, we must add a `"use client"` directive at the very top of the file. You cannot import a server component into a client component, instead you can pass a Server Component as props to a Client Component. Importing a server component into a client component will turn your server component into a client component and if your server component is an async function, it'll throw an error. Good practice is to use client components only when you need interactivity or event listeners or browser APIs, for everything else, prefer server components. Moving client components down the tree is also considered a good practice.
+
+When fetching data inside server components, there's no need to pass the data around as props. You can co-locate your data-fetching with the component that actually needs it because behind the scenes, NextJS de-duplicates the requests. So any component can fetch data without worrying about duplicate requests because NextJS will use the fetch cache if there is a similar request in different layouts or pages.
+
+## Static vs Dynamic Rendering
+
+![/images/rendering-strategies](/images/rendering-strategies.svg)
+
+By default, all the pages in NextJS are rendered at build time statically. We opt-in specific route segments into using dynamic rendering when we either use dynamic route segments or use a function that accesses data which can only be known at request time e.g. cookies, headers, query params, etc.
+
+Tip: If you use a hook like `useSearchParams` inside a client component, it will not only opt-in that specific component into dynamic rendering but it goes all the way in the component hierarchy until it sees a Suspense boundary and makes all of that to dynamically render as well. That's why it is recommended to wrap the client component that is using the `useSearchParams` hook into a Suspense boundary so that it only dynamically renders that specific component and not anything that comes above it.
+
+## Edge vs Node Runtimes
+
+Runtime in NextJS decides what all libraries & APIs will be available when your code is being executed. Node Runtime is the default runtime. Node runtime has support for more features when compared to Edge, Node.js APIs like filesystem APIs, for example, are missing in Edge but are there in Node. Edge Runtime is based on Web APIs. Runtime can be changed for a specific page, layout or route by exporting a variable:
+
+```jsx
+export const runtime = "edge";
+```
+
+## Fetching
+
+We have already discussed how NextJS de-duplicates requests to similar URLs between different pages & layouts. Now this deduplication happens in a render pass. On the server, a render pass is when a request-response cycle finishes. From the time we receive a request on the server, fetch data on server, create HTML and send it back in the response, that's one render cycle. Throughout this cycle, the request made while fetching data on the server is going to be cached between pages & layouts. Thus, if multiple components are making a fetch request to the same URL, NextJS prevents all but the first request.
+
+On the client, however, the response is cached and lasts the duration of a session (till a full page reload). This is all assuming you're using the `fetch` API. NextJS has extended the `fetch` API to allow for caching. But what if you're not using the `fetch` API? What if you're using something like axios, prisma, etc? Well, in that case, you can use the `cache` function from React to prevent fetching the same resource multiple times.
+
+### Static vs Dynamic data
+
+Static data is data that doesn't change much (if any) at all, it remains the same for all users no matter who's requesting it. We can serve it up from a CDN after building it once. It makes the load times faster & also reduces the load on our server as no data fetching is needed to be done. On the other hand, we have dynamic data which changes frequently and can be different for different users.
+
+```jsx
+async function getTodos() {
+  const res = await fetch("https://jsonplaceholder.typicode.com/todos");
+
+  if (!res.ok) throw new Error("Failed to fetch todos.");
+
+  return res.json();
+}
+
+const Page = async () => {
+  const todos = getTodos();
+
+  return (
+    <div>
+      <ul>
+        {todos.slice(0, 10).map((todo, idx) => (
+          <li key={idx}>{todo}</li>
+        ))}
+      </ul>
+    </div>
+  );
+};
+```
+
+If you're using `fetch`, then by default, NextJS tries to optimize your app by fetching the data at build time and caching the response. That is the default behavior of all pages & layouts. You can change this behavior:
+
+```jsx
+...
+const res = await fetch("https://jsonplaceholder.typicode.com/todos", { cache: 'no-store' });
+...
+```
+
+This way you can change the default caching behavior on a per request basis. If we want to change the behavior for that entire segment/page, just export a variable from that file:
+
+```jsx
+export const dynamic = "force-dynamic";
+```
+
+NextJS extends the fetch API to modify cache revalidation behaviour as well:
+
+```jsx
+...
+const res = await fetch("https://jsonplaceholder.typicode.com/todos", { cache: 'no-store', next: {revalidate: 300} });
+...
+```
+
+## Caching
+
+NextJS has an HTTP cache that stores responses for a particular URL and re-uses that response for subsequent requests. NextJS supports caching data on a per-request basis and also for an entire route segment. We have already seen how NextJS has extended the fetch API to cache responses on a per-request basis & how requests are de-duplicated. This kind of cache is different from the HTTP cache that we've just mentioned. HTTP cache sits between the users and the server as a global CDN. If you are not using fetch and still want to cache data at build time & achieve request de-duplication, you can use the `cache` function from react:
+
+```jsx
+import { cache } from "react";
+
+export const getTodos = cache(async () => {
+  console.log("fetching todos...");
+
+  const todos = db.find({});
+
+  return { todos };
+});
+```
+
+If you use this function in a static page in production server more than once, you'll only see 1 log.
+
+## Revalidation
+
+There are 2 ways to revalidate data in NextJS:
+
+1. Background re-validation: revalidates data at specific time intervals
+2. On-demand re-validation: revalidates data in response to an event
+
+We have already seen how to revalidate data in the background using the `next: { revalidate: 60 }` option in fetch. But how to revalidate data in the background when not using fetch API? Just export a variable from the file like so:
+
+```jsx
+export const revalidate = 60;
+```
+
+This doesn't however mean the first person who visits after 60 seconds will see new data. The first person visiting after 60 seconds will still see stale data but this is when NextJS will purge old data and re-fetch the data so that the second person who visits after initial 60 seconds will see the latest data.
+
+There are yet again 2 ways to do on-demand data re-validation: revalidate path & revalidate tag. `revalidatePath` revalidates the whole route segment while `revalidateTag` revalidates specific tags.
+
+```jsx
+...
+const res = await fetch("https://jsonplaceholder.typicode.com/todos", {
+  next: { tags: ["todos"] },
+});
+...
+```
+
+This data will remain cached until we do the following as part of an event:
+
+```jsx
+import { revalidateTag } from "next/cache";
+
+export default async function createTodo(...) {
+  ...
+  revalidateTag("todos");
+  ...
+}
+```
+
+## Server Actions
+
+As per NextJS official docs, "Server Actions are asynchronous functions that are executed on the server. They can be used in Server and Client Components to handle form submissions and data mutations in Next.js applications." A server action can be defined with react `'use server'` directive. This directive can be placed at the top of a file or at the top of an async function. Client components can only import server actions that use the module-level `'use server'` directive. One of the popular use-cases of server actions is their use in forms.
+
+Server actions are used in combination with React's `useFormState` & `useFormStatus` for handling forms in NextJS. React documentation says, "useFormState is a hook that allows you to update state based on the result of a form action".
+
+```jsx
+"use server";
+
+import { FormDataSchema } from "@/lib/formSchema";
+
+export async function addEntry(state: any, formData: FormData) {
+  const result = FormDataSchema.safeParse({
+    name: formData.get("name"),
+    email: formData.get("email"),
+  });
+
+  if (result.success) {
+    return { data: result.data };
+  }
+
+  if (result.error) {
+    return { error: result.error.format() };
+  }
+}
+```
+
+```jsx
+import { useFormState, useFormStatus } from "react-dom";
+import { fn } from "./_actions";
+
+export default function Form() {
+  const [state, formAction] = useFormState(fn, initialState);
+
+  return (
+    <div>
+      <form action={formAction}>
+        ...
+        <SubmitButton />
+      </form>
+    </div>
+  );
+}
+
+function SubmitButton() {
+  const { pending } = useFormStatus();
+
+  return <button disabled={pending}>Submit</button>;
+}
+```
+
+At the time of this writing, `useFormStatus` hook is only available in React’s Canary and experimental channels. The function addEntry is a server action that returns the new form state or error. useFormState uses this function to update the state of the form. If we create a form like this, it can even work with javascript disabled. Note that in order to get the pending state working, we need to extract the call of `useFormStatus` hook in a separate component, we can't get the right value of pending if we're at the same level as `useFormState`.
+
+## Image
+
+The NextJS Image component extends the HTML `<img />` component with features for automatic image optimization:
+
+- Load on-demand: Images are only loaded when they enter the viewport using native browser lazy loading, with optional blur placeholders. It improves page load time.
+
+- Size Optimization: Automagically serves correctly sized images for each device, using modern image formats like WebP & AVIF.
+
+- Visual Stability: Prevent [layout shift](https://web.dev/articles/cls) when images are loading.
+
+- Asset Flexibility: On-demand image resizing, even for images stored on remote servers.
+
+```jsx
+import Image from "next/image";
+```
+
+### Some Props:
+
+`src`
+
+Must be one of the following:
+
+- Statically imported image file
+- A path string. This can either be an absolute URL or an internal path
+
+`width`
+
+Rendered width in pixels. Required expect for:
+
+- Statically imported images
+- Images with the `fill` property
+
+`height`
+
+Rendered height in pixels. Required expect for:
+
+- Statically imported images
+- Images with the `fill` property
+
+`fill`
+
+A boolean that causes the image to fill the parent element instead of setting width & height.
+
+- The parent element must assign position relative, fixed or absolute.
+- By default, the img element will be assigned the position absolute.
+- By default, the image will stretch to fit the container width. You may prefer to set `object-fit` to `contain` or `cover` to crop the image to fill the entire container.
+
+`sizes`
+
+- A string that provides information about how wide the image will be at different breakpoints.
+- Defaults to `100vw` in images with `fill` property.
+- When using `fill`, it's important to assign sizes for any image that takes up less than the full viewport width.
+- The value of sizes will greatly affect performance for images using `fill` or which are styled to have a responsive design.
+- The `sizes` prop serves two important purposes related to image performance:
+
+  1. The value of `sizes` is used by the browser to determine which size of the image to download, from the generated source set. If you don't specify a `sizes`' value in an image with the `fill` prop, a default value of `100vw` is used.
+
+  2. The `sizes` prop configures how `next/image` automatically generates an image source set. If no `sizes` value is present, a small source set is generated, suitable for a fixed-size image.
+
+Example:
+
+```jsx
+import Image from "next/image";
+
+export default function Page() {
+  return (
+    <div className="grid-element">
+      <Image
+        fill
+        src="/example.png"
+        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+      />
+    </div>
+  );
+}
+```
+
+`quality`
+
+An integer between 1 and 100 where 100 is the best quality & therefore, largest file size. Defaults to 75.
+
+`priority`
+
+By default, NextJS lazy loads all the images, even the ones that are in the viewport when the page first loads. `priority` prop can change this behavior on a per-image basis.
+
+- When true, the image will be considered high priority and preloaded. Lazy loading is automatically disabled for images using pri`ority.
+- Should only be used when the image is visible above the fold.
+- Defaults to false.
+
+`alt`
+
+The `alt` property is used to describe the image for screen readers & search engines.
+
+```jsx
+import Image from "next/image";
+import pic from "./myImage.jpg";
+
+export default function Page() {
+  return (
+    <Image
+      src={pic}
+      alt="area 51 confidential image"
+      // width={500} // automatically provided
+      // height={500} // automatically provided
+      // blurDataURL="data:..." // automatically provided
+      // placeholder="blur" // optional blur effect while loading
+    />
+  );
+}
+```
+
+When using a remote image URL, you'll need to provide width & height props or the fill property. Additionally, you may also have to configure `remotePatterns` in your next config.
+
+```jsx
+import Image from "next/image";
+
+export default function Page() {
+  return (
+    <Image
+      src="https://example.com/pic.jpg"
+      alt="area 51 confidential image"
+      width={500}
+      height={500}
+    />
+  );
+}
+```
+
+```jsx
+const nextConfig = {
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "example.com",
+        port: "",
+        pathname: "/**",
+      },
+    ],
+  },
+};
+
+export default nextConfig;
+```
+
+If you want to use relative URLs for the image `src`, use a `loader`. There are 2 ways to specify a loader:
+
+- Using the `loader` prop, you can define a loader on a per-image basis.
+
+A `loader` is a function returning a URL string for the image, given src, width & quality. Note that using loader prop which accepts a function, requires using client components to serialize the provided function.
+
+```jsx
+"use client";
+
+import Image from "next/image";
+
+const imageLoader = ({ src, width, quality }) => {
+  return `https://example.com/${src}?w=${width}&q=${quality || 75}`;
+};
+
+export default function Page() {
+  return (
+    <Image
+      src="/pic.jpg"
+      alt="area 51 confidential image"
+      width={500}
+      height={500}
+    />
+  );
+}
+```
+
+- At the application level, you can use the `loaderFile` config. If you want to use a cloud provider to optimize images instead of using the NextJS built-in Image Optimization API, you can configure the `loaderFile` in your next config.
+
+```jsx
+const nextConfig = {
+  images: {
+    loader: "custom",
+    loaderFile: "./image-loader/loader.ts",
+  },
+};
+
+export default nextConfig;
+```
+
+This must point to a file relative to the root of your NextJS application. The file must export a default function that returns a string. For example:
+
+```jsx
+export default function imageLoader({ src, width, quality }) {
+  return `https://example.com/${src}?w=${width}&q=${quality || 75}`;
+}
+```
+
+## Fonts
+
+`next/font` automatically optimizes your fonts. You can conveniently use all Google fonts or any other custom fonts.
+
+- Removes external network requests for improved performance.
+- Loads web fonts with zero layout shifts.
+- CSS and font-files are downloaded at build-time and self-hosted with the rest of your static assets.
+- The font is automatically preloaded:
+  - If it's a unique page, it is preloaded on the unique route for that page.
+  - If it's a layout, it is preloaded on all routes wrapped by the layout.
+  - If it's the root layout, it is preloaded on all routes.
+
+```jsx
+import { Inter } from "next/font/google";
+
+const inter = Inter({
+  subsets: ["latin"],
+  display: "swap",
+});
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode,
+}) {
+  return (
+    <html lang="en" className={inter.className}>
+      <body>{children}</body>
+    </html>
+  );
+}
+```
+
+Not just google fonts, you can also use local fonts as well.
+
+```jsx
+import localFont from "next/font/local";
+
+const myFont = localFont({
+  src: "./my-font.woff2",
+  display: "swap",
+});
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode,
+}) {
+  return (
+    <html lang="en" className={myFont.className}>
+      <body>{children}</body>
+    </html>
+  );
+}
+```
+
+## Scripts
+
+Third-party scripts can be loaded in a NextJS app directly inside a layout component:
+
+```jsx
+import Script from "next/script";
+
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode,
+}) {
+  return (
+    <>
+      <section>{children}</section>
+      <Script src="https://example.com/script.js" />
+    </>
+  );
+}
+```
+
+The script is fetched when the route or any nested route is accessed by the user. NextJS ensures that the script loads only once, when the user navigates between multiple routes in the same layout. To load a third-party script for all routes, load it directly in the root layout. It is recommended to load scripts only in specific pages or layouts in order to minimize any unnecessary impact on performance.
+
+You can fine-tune `next/script` loading behaviour using the `strategy` property:
+
+- `beforeInteractive`: Load the script before loading any NextJS code or page hydration.
+- `afterInteractive` (default): Load the script early but after page hydration.
+- `lazyOnload`: Load the script later during browser idle time.
+
+Inline scripts are also supported by the `Script` component.
+
+```jsx
+<Script id="show-banner">
+  {`document.getElementById('banner').classList.remove('hidden')`}
+</Script>
+```
+
+Or by using the `dangerouslySetInnerHTML` property:
+
+```jsx
+<Script
+  id="show-banner"
+  dangerouslySetInnerHTML={{
+    __html: `document.getElementById('banner').classList.remove('hidden')`,
+  }}
+/>
+```
+
+It also supports events for executing additional code.
+
+- `onLoad`: Execute code after the script has finished loading.
+- `onReady`: Execute code after the script has finished loading and every time the component is mounted.
+- `onError`: Execute code if the script fails to load.
+
+Note that these handlers will only work when `next/script` is imported and we're using them inside a client component. Any additional attributes that you pass to the `Script` component will be automatically forwarded to the final HTML `<script>` element.
+
+## Metadata
+
+The Metadata API of NextJS is used to define your app's metadata for improved SEO and web shareability. There are 2 ways to add metadata:
+
+1. Config Based Metadata: Export a static metadata object or a dynamic `generateMetadata` function in a layout or page file.
+2. File Based Metadata: Add static or dynamically generated special files to route segments. Refer [docs](https://nextjs.org/docs/app/building-your-application/optimizing/metadata#file-based-metadata).
+
+### Static Metadata
+
+To define static metadata, export a `Metadata` object from layout or page file.
+
+```jsx
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "...",
+  description: "...",
+};
+
+export default function Page() {...}
+```
+
+### Dynamic Metadata
+
+To define dynamic metadata, you need to use `generateMetadata` to fetch metadata that requires dynamic values.
+
+```jsx
+import type { Metadata, ResolvingMetadata } from 'next'
+
+type Props = {
+  params: { id: string }
+  searchParams: { [key: string]: string | string[] | undefined }
+}
+
+export async function generateMetadata(
+  { params, searchParams }: Props,
+  parent: ResolvingMetadata
+): Promise<Metadata> {
+  // read route params
+  const id = params.id
+
+  // fetch data
+  const product = await fetch(`https://.../${id}`).then((res) => res.json())
+
+  // optionally access and extend (rather than replace) parent metadata
+  const previousImages = (await parent).openGraph?.images || []
+
+  return {
+    title: product.title,
+    openGraph: {
+      images: ['/some-specific-page-image.jpg', ...previousImages],
+    },
+  }
+}
+
+export default function Page({ params, searchParams }: Props) {...}
+```
+
+Parameters received by `generateMetadata`:
+
+- props: object containing:
+  - `params` - object containing route segments
+  - `searchParams` - object containing current URL's search params (only available in `page` components)
+- parent: promise resolving to metadata from parent route segments
+
+Note that `metadata` objects and the `generateMetadata` function exports are only supported in Server Components. You cannot export both from the same route segment. NextJS will wait for data fetching inside `generateMetadata` to finish before streaming the UI to the client. This guarantees the first part of a streamed response includes `<head>` tags.
+
+## Route Handlers
+
+Route handlers in NextJS allow you to create custom request handlers for a given route using the Web Request and Response APIs. They are only available inside the `app` directory. Route handlers are defined in a `route.ts` file inside the app directory.
+
+```jsx
+// app/api/route.ts
+
+export async function GET(request: Request) {}
+```
+
+Route handlers can be nested inside the app directory, similar to page & layout. But there can't be `route.ts` files at the same route segment level as `page.ts`. The following HTTP methods are supported:
+
+- GET
+- POST
+- PUT
+- PATCH
+- DELETE
+- HEAD
+- and OPTIONS
+
+If an unsupported method is called, NextJS will return a `405 Method Not Allowed` response. NextJS extends the native `Request` and `Response` with `NextRequest` and `NextResponse` to provide convenient helpers for advanced use cases. Previously, API routes were used for handling form submissions. Route handlers are likely not the solution for these use cases. It's recommended to use server actions for form submission and mutations.
+
+Route handlers are statically evaluated by default when using the `GET` method with the `Response` object. It can be revalidated using the same techniques we discussed earlier.
+
+```jsx
+export async function GET() {
+  const res = await fetch("https://data.mongodb-api.com/...", {
+    headers: {
+      "Content-Type": "application/json",
+      "API-Key": process.env.DATA_API_KEY,
+    },
+  });
+  const data = await res.json();
+
+  return Response.json({ data });
+}
+```
+
+Route handlers are evaluated dynamically when:
+
+- Using the `Request` object with the `GET` method.
+- Using any of the other HTTP methods.
+- Using dynamic functions like `cookies` and `headers`.
+- The segment config options manually specify dynamic mode.
+
+Route handlers support both Edge & Node.js runtimes seamlessly, including support for streaming.
+
+## Middleware
+
+Middlewares in NextJS allow you to run code before a request is completed. You can then:
+
+- Rewrite
+- Redirect
+- Modify the headers
+- Or respond directly
+
+Middlewares run before cached content and routes are matched. It can be useful for things like:
+
+- Authentication
+- Redirect and rewrite based on the user geolocation
+- Add or modify request/response headers
+- Read, write and manage cookies
+- Render and return a page or component
+- Respond with some JSON, like an API endpoint
+- Enforce a block or IP allow list
+- A/B testing with different content
+
+To create middleware, according to NextJS docs, "Use the file `middleware.ts` (or .js) in the root of your project to define Middleware. For example, at the same level as pages or app, or inside src if applicable."
+
+```jsx
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+
+export function middleware(request: NextRequest) {
+  return NextResponse.redirect(new URL("/home", request.url));
+}
+
+export const config = {
+  matcher: "/about/:path*",
+};
+```
+
+By default, the middleware will run for all routes. If you want to limit the routes for which to run, there are 2 ways:
+
+1. Custom matcher config
+2. Conditional Statements
+
+We have used a `Custom matcher config` in our example above. `matcher` allows you to filter Middleware to run on specific paths. Note that `matcher` values need to be constants so they can be statically analyzed at build time.
+
+Configuration:
+
+- Must start with `/`
+- Can include named parameters
+  - `/about/:path`
+    - matches `about/a`
+    - and `about/b`
+    - but not `about/a/c`
+- Can have modifiers on named parameters
+  - `/about/path*`
+    - matches `about/a/c`
+    - `*` is zero or more
+    - `?` is zero or one
+    - `+` is one or more
+- Can use regex enclosed in parenthesis: `/about/(.*)` is same as `/about/:path*`
+
+If you don't want to use `matcher` then you can also use conditional statements:
+
+```jsx
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+
+export function middleware(request: NextRequest) {
+  if (request.nextUrl.pathname.startsWith("/about")) {
+    return NextResponse.rewrite(new URL("/about-2", request.url));
+  }
+
+  if (request.nextUrl.pathname.startsWith("/dashboard")) {
+    return NextResponse.rewrite(new URL("/dashboard/user", request.url));
+  }
+}
+```
+
+## Internationalization
+
+Internationalized routing in NextJS commonly abbreviated as `i18n` refers to serving up the content of your pages in the native language of your users. It's recommended to use the user's language preferences in the browser from the `Accept-Language` header in your application.
+
+There are two pieces to internationalization:
+
+- Routing
+- Localization
+
+### Routing
+
+Redirecting the user to the correct path or domain, handled by NextJS. There are two main strategies for routing:
+
+- Path routing: puts the locale in the URL path => `/blog`, `/fr/blog`, `/nl/blog`
+- Domain routng: different locales are served from different domains => `example.com`, `example.fr`, `example.nl`
+
+Using the `@formatjs/intl-localematcher` amd `negotiator` libraries, we can create a function that determines the user's preferred locale based on the request headers.
+
+```jsx
+import { match as matchLocale } from "@formatjs/intl-localematcher";
+import Negotiator from "negotiator";
+
+let locales = ["en-US", "nl-NL", "nl"];
+let defaultLocale = "en-US";
+
+function getLocale(request) {
+  const negotiatorHeaders = {};
+  request.headers.forEach((value, key) => (negotiatorHeaders[key] = value));
+
+  const languages = new Negotiator({ headers: negotiatorHeaders }).languages();
+
+  const locale = matchLocale(languages, locales, defaultLocale);
+  return locale;
+}
+```
+
+and then use it in your middleware function:
+
+```jsx
+import { NextResponse } from "next/server";
+
+let locales = ['en-US', 'nl-NL', 'nl']
+
+// Get the preferred locale, similar to the above or using a library
+function getLocale(request) { ... }
+
+export function middleware(request) {
+  // Check if there is any supported locale in the pathname
+  const { pathname } = request.nextUrl
+  const pathnameHasLocale = locales.some(
+    (locale) => pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`
+  )
+
+  if (pathnameHasLocale) return
+
+  // Redirect if there is no locale
+  const locale = getLocale(request)
+  request.nextUrl.pathname = `/${locale}${pathname}`
+  // e.g. incoming request is /products
+  // The new URL is now /en-US/products
+  return NextResponse.redirect(request.nextUrl)
+}
+
+export const config = {
+  matcher: [
+    // Skip all internal paths (_next)
+    '/((?!_next).*)',
+    // Optional: only run on root (/) URL
+    // '/'
+  ],
+}
+```
+
+Finally, we need to ensure that all files inside `app` are nested under `app/[lang]`. This enables the NextJS router to dynamically handle different locales in the route, and forward the `lang` parameter to every layout and page.
+
+```jsx
+// You now have access to the current locale
+// e.g. /en-US/products -> `lang` is "en-US"
+export default async function Page({ params: { lang } }) {
+  return ...
+}
+```
+
+### Localization
+
+Displaying the content based on the user's preferred locale, typically handled by third-party libraries or your CMS.
+Let’s assume we want to support both English and Dutch content inside our application. We can maintain `dictionaries`, which are objects that map keys to localized strings. For example:
+
+`dictionaries/en.json`
+
+```jsx
+{
+  "products": {
+    "cart": "Add to Cart"
+  }
+}
+```
+
+`dictionaries/nl.json`
+
+```jsx
+{
+  "products": {
+    "cart": "Toevoegen aan Winkelwagen"
+  }
+}
+```
+
+We can now create a `getDictionary` function to load the correct translations:
+
+`app/[lang]/dictionaries.ts`
+
+```jsx
+import "server-only";
+
+const dictionaries = {
+  en: () => import("./dictionaries/en.json").then((module) => module.default),
+  nl: () => import("./dictionaries/nl.json").then((module) => module.default),
+};
+
+export const getDictionary = async (locale) => dictionaries[locale]();
+```
+
+Given the currently selected language, we can fetch the dictionary inside of a layout or page.
+
+```jsx
+import { getDictionary } from "./dictionaries";
+
+export default async function Page({ params: { lang } }) {
+  const dict = await getDictionary(lang); // en
+  return <button>{dict.products.cart}</button>; // Add to Cart
+}
+```
+
+Because all layouts and pages in the `app/` directory default to Server Components, we do not need to worry about the size of the translation files affecting our client-side JavaScript bundle size. This code will only run on the server, and only the resulting HTML will be sent to the browser.
+
+To generate static routes for a given set of locales, we can use generateStaticParams with any page or layout. This can be global, for example, in the root layout:
+
+`app/[lang]/layout.ts`
+
+```jsx
+export async function generateStaticParams() {
+  return [{ lang: "en-US" }, { lang: "de" }];
+}
+
+export default function Root({ children, params }) {
+  return (
+    <html lang={params.lang}>
+      <body>{children}</body>
+    </html>
+  );
+}
+```
