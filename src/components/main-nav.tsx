@@ -13,6 +13,7 @@ import {
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
 import { cn } from "@/lib/utils";
+import { Icons } from "@/components/icons";
 
 const posts: { title: string; href: string; description: string }[] = [
   {
@@ -50,8 +51,8 @@ export default function MainNav() {
       )}
     >
       <Link href={"/"}>
-        <div>
-          {/* Icon */}
+        <div className="flex items-center justify-between w-48">
+          <Icons.logo className="h-6 w-6" />
           <p>Deepak Barwal&apos;s Blog</p>
         </div>
       </Link>
