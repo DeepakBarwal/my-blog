@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  exclude: ["src/generated"],
 };
 
 export default nextConfig;
