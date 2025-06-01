@@ -46,22 +46,16 @@ For our Express app, the Dockerfile might look something like:
 ```Dockerfile
 # Use the official Node.js image as our base
 FROM node:18
-
 # Set the working directory inside the container
 WORKDIR /usr/src/app
-
 # Copy package.json and package-lock.json first to leverage Docker cache
 COPY package*.json ./
-
 # Install app dependencies
 RUN npm install
-
 # Copy the rest of our app's source code into the container
 COPY . .
-
 # Expose the port the app will run on
 EXPOSE 5501
-
 # The command to run our app
 CMD ["npm", "run", "dev"]
 ```
@@ -107,14 +101,11 @@ Your Express app is now accessible at http://localhost:5501.
 You can stop the running container by using this command:
 
 ```bash
-
 // If container is running in interactive mode.
 ctr + c
-
 // If container is running in detached mode.
 // List all running container
 docker ps
-
 // Stop the container using container id
 docker stop <container id>
 ```

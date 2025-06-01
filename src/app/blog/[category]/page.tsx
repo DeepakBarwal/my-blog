@@ -5,10 +5,17 @@ import Container from "@/components/Container";
 import CardCategory from "@/components/CardCategory";
 import Header from "@/components/Header";
 
+export async function generateStaticParams() {
+  const posts = getBlogPosts();
+  return posts.map((post) => ({
+    category: post.metadata.category,
+  }));
+}
+
 export default async function Page({
   params,
 }: {
-  params: { category: string };
+  params: Promise<{ category: string }>;
 }) {
   const { category } = await params;
   const posts = getBlogPosts().filter(

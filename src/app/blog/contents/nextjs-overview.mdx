@@ -80,16 +80,15 @@ import Link from "next/link";
 <Link href={"/"}>Go Home</Link>;
 ```
 
+<br />
 2. useRouter Hook (Client Components)
-
 ```jsx
 import { useRouter } from "next/navigation";
 const router = useRouter();
 router.push("/contact");
 ```
-
+<br />
 3. redirect function (Server Components)
-
 ```jsx
 import { redirect } from "next/navigation";
 const user = await fetchUser(params.id);
@@ -97,7 +96,7 @@ if (!user) {
   redirect("/login");
 }
 ```
-
+<br />
 The `Link` component pre-fetches the content for routes as soon as the component is visible in the viewport and stores the result in client-side cache. Pre-fetching is only enabled on production. It can also be disabled by passing `prefetch={false}` to the Link component. As a result of pre-fetching, a soft navigation happens that is near-instant.
 
 ## Dynamic Routes
@@ -163,12 +162,10 @@ class ErrorBoundary extends React.Component {
     super(props);
     this.state = { hasError: false };
   }
-
   static getDerivedStateFromError(error) {
     // Update state so the next render will show the fallback UI.
     return { hasError: true };
   }
-
   componentDidCatch(error, info) {
     // Example "componentStack":
     //   in ComponentThatThrows (created by App)
@@ -177,13 +174,11 @@ class ErrorBoundary extends React.Component {
     //   in App
     logErrorToMyService(error, info.componentStack);
   }
-
   render() {
     if (this.state.hasError) {
       // You can render any custom fallback UI
       return this.props.fallback;
     }
-
     return this.props.children;
   }
 }
@@ -205,9 +200,7 @@ Usage:
 
 ```jsx
 'use client' // Error components must be Client Components
-
 import { useEffect } from 'react'
-
 export default function Error({
   error,
   reset,
@@ -219,7 +212,6 @@ export default function Error({
     // Log the error to an error reporting service
     console.error(error)
   }, [error])
-
   return (
     <div>
       <h2>Something went wrong!</h2>
@@ -293,15 +285,11 @@ Static data is data that doesn't change much (if any) at all, it remains the sam
 ```jsx
 async function getTodos() {
   const res = await fetch("https://jsonplaceholder.typicode.com/todos");
-
   if (!res.ok) throw new Error("Failed to fetch todos.");
-
   return res.json();
 }
-
 const Page = async () => {
   const todos = getTodos();
-
   return (
     <div>
       <ul>
@@ -342,12 +330,9 @@ NextJS has an HTTP cache that stores responses for a particular URL and re-uses 
 
 ```jsx
 import { cache } from "react";
-
 export const getTodos = cache(async () => {
   console.log("fetching todos...");
-
   const todos = db.find({});
-
   return { todos };
 });
 ```
@@ -383,7 +368,6 @@ This data will remain cached until we do the following as part of an event:
 
 ```jsx
 import { revalidateTag } from "next/cache";
-
 export default async function createTodo(...) {
   ...
   revalidateTag("todos");
@@ -399,19 +383,15 @@ Server actions are used in combination with React's `useFormState` & `useFormSta
 
 ```jsx
 "use server";
-
 import { FormDataSchema } from "@/lib/formSchema";
-
 export async function addEntry(state: any, formData: FormData) {
   const result = FormDataSchema.safeParse({
     name: formData.get("name"),
     email: formData.get("email"),
   });
-
   if (result.success) {
     return { data: result.data };
   }
-
   if (result.error) {
     return { error: result.error.format() };
   }
@@ -421,10 +401,8 @@ export async function addEntry(state: any, formData: FormData) {
 ```jsx
 import { useFormState, useFormStatus } from "react-dom";
 import { fn } from "./_actions";
-
 export default function Form() {
   const [state, formAction] = useFormState(fn, initialState);
-
   return (
     <div>
       <form action={formAction}>
@@ -434,10 +412,8 @@ export default function Form() {
     </div>
   );
 }
-
 function SubmitButton() {
   const { pending } = useFormStatus();
-
   return <button disabled={pending}>Submit</button>;
 }
 ```
@@ -507,7 +483,6 @@ Example:
 
 ```jsx
 import Image from "next/image";
-
 export default function Page() {
   return (
     <div className="grid-element">
@@ -540,7 +515,6 @@ The `alt` property is used to describe the image for screen readers & search eng
 ```jsx
 import Image from "next/image";
 import pic from "./myImage.jpg";
-
 export default function Page() {
   return (
     <Image
@@ -559,7 +533,6 @@ When using a remote image URL, you'll need to provide width & height props or th
 
 ```jsx
 import Image from "next/image";
-
 export default function Page() {
   return (
     <Image
@@ -585,7 +558,6 @@ const nextConfig = {
     ],
   },
 };
-
 export default nextConfig;
 ```
 
@@ -597,13 +569,10 @@ A `loader` is a function returning a URL string for the image, given src, width 
 
 ```jsx
 "use client";
-
 import Image from "next/image";
-
 const imageLoader = ({ src, width, quality }) => {
   return `https://example.com/${src}?w=${width}&q=${quality || 75}`;
 };
-
 export default function Page() {
   return (
     <Image
@@ -616,7 +585,10 @@ export default function Page() {
 }
 ```
 
-- At the application level, you can use the `loaderFile` config. If you want to use a cloud provider to optimize images instead of using the NextJS built-in Image Optimization API, you can configure the `loaderFile` in your next config.
+<br />- At the application level, you can use the `loaderFile` config. If you
+want to use a cloud provider to optimize images instead of using the NextJS
+built-in Image Optimization API, you can configure the `loaderFile` in your next
+config.
 
 ```jsx
 const nextConfig = {
@@ -625,7 +597,6 @@ const nextConfig = {
     loaderFile: "./image-loader/loader.ts",
   },
 };
-
 export default nextConfig;
 ```
 
@@ -649,14 +620,12 @@ export default function imageLoader({ src, width, quality }) {
   - If it's a layout, it is preloaded on all routes wrapped by the layout.
   - If it's the root layout, it is preloaded on all routes.
 
-```jsx
-import { Inter } from "next/font/google";
-
+<br />
+```jsx import {Inter} from "next/font/google";
 const inter = Inter({
-  subsets: ["latin"],
-  display: "swap",
+subsets: ["latin"],
+display: "swap",
 });
-
 export default function RootLayout({
   children,
 }: {
@@ -674,12 +643,10 @@ Not just google fonts, you can also use local fonts as well.
 
 ```jsx
 import localFont from "next/font/local";
-
 const myFont = localFont({
   src: "./my-font.woff2",
   display: "swap",
 });
-
 export default function RootLayout({
   children,
 }: {
@@ -699,7 +666,6 @@ Third-party scripts can be loaded in a NextJS app directly inside a layout compo
 
 ```jsx
 import Script from "next/script";
-
 export default function DashboardLayout({
   children,
 }: {
@@ -777,25 +743,20 @@ To define dynamic metadata, you need to use `generateMetadata` to fetch metadata
 
 ```jsx
 import type { Metadata, ResolvingMetadata } from 'next'
-
 type Props = {
   params: { id: string }
   searchParams: { [key: string]: string | string[] | undefined }
 }
-
 export async function generateMetadata(
   { params, searchParams }: Props,
   parent: ResolvingMetadata
 ): Promise<Metadata> {
   // read route params
   const id = params.id
-
   // fetch data
   const product = await fetch(`https://.../${id}`).then((res) => res.json())
-
   // optionally access and extend (rather than replace) parent metadata
   const previousImages = (await parent).openGraph?.images || []
-
   return {
     title: product.title,
     openGraph: {
@@ -803,7 +764,6 @@ export async function generateMetadata(
     },
   }
 }
-
 export default function Page({ params, searchParams }: Props) {...}
 ```
 
@@ -822,7 +782,6 @@ Route handlers in NextJS allow you to create custom request handlers for a given
 
 ```jsx
 // app/api/route.ts
-
 export async function GET(request: Request) {}
 ```
 
@@ -849,7 +808,6 @@ export async function GET() {
     },
   });
   const data = await res.json();
-
   return Response.json({ data });
 }
 ```
@@ -888,11 +846,9 @@ To create middleware, according to NextJS docs, "Use the file `middleware.ts` (o
 ```jsx
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-
 export function middleware(request: NextRequest) {
   return NextResponse.redirect(new URL("/home", request.url));
 }
-
 export const config = {
   matcher: "/about/:path*",
 };
@@ -926,12 +882,10 @@ If you don't want to use `matcher` then you can also use conditional statements:
 ```jsx
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-
 export function middleware(request: NextRequest) {
   if (request.nextUrl.pathname.startsWith("/about")) {
     return NextResponse.rewrite(new URL("/about-2", request.url));
   }
-
   if (request.nextUrl.pathname.startsWith("/dashboard")) {
     return NextResponse.rewrite(new URL("/dashboard/user", request.url));
   }
@@ -959,16 +913,12 @@ Using the `@formatjs/intl-localematcher` amd `negotiator` libraries, we can crea
 ```jsx
 import { match as matchLocale } from "@formatjs/intl-localematcher";
 import Negotiator from "negotiator";
-
 let locales = ["en-US", "nl-NL", "nl"];
 let defaultLocale = "en-US";
-
 function getLocale(request) {
   const negotiatorHeaders = {};
   request.headers.forEach((value, key) => (negotiatorHeaders[key] = value));
-
   const languages = new Negotiator({ headers: negotiatorHeaders }).languages();
-
   const locale = matchLocale(languages, locales, defaultLocale);
   return locale;
 }
@@ -978,21 +928,16 @@ and then use it in your middleware function:
 
 ```jsx
 import { NextResponse } from "next/server";
-
 let locales = ['en-US', 'nl-NL', 'nl']
-
 // Get the preferred locale, similar to the above or using a library
 function getLocale(request) { ... }
-
 export function middleware(request) {
   // Check if there is any supported locale in the pathname
   const { pathname } = request.nextUrl
   const pathnameHasLocale = locales.some(
     (locale) => pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`
   )
-
   if (pathnameHasLocale) return
-
   // Redirect if there is no locale
   const locale = getLocale(request)
   request.nextUrl.pathname = `/${locale}${pathname}`
@@ -1000,7 +945,6 @@ export function middleware(request) {
   // The new URL is now /en-US/products
   return NextResponse.redirect(request.nextUrl)
 }
-
 export const config = {
   matcher: [
     // Skip all internal paths (_next)
@@ -1052,12 +996,10 @@ We can now create a `getDictionary` function to load the correct translations:
 
 ```jsx
 import "server-only";
-
 const dictionaries = {
   en: () => import("./dictionaries/en.json").then((module) => module.default),
   nl: () => import("./dictionaries/nl.json").then((module) => module.default),
 };
-
 export const getDictionary = async (locale) => dictionaries[locale]();
 ```
 
@@ -1065,7 +1007,6 @@ Given the currently selected language, we can fetch the dictionary inside of a l
 
 ```jsx
 import { getDictionary } from "./dictionaries";
-
 export default async function Page({ params: { lang } }) {
   const dict = await getDictionary(lang); // en
   return <button>{dict.products.cart}</button>; // Add to Cart
@@ -1082,7 +1023,6 @@ To generate static routes for a given set of locales, we can use generateStaticP
 export async function generateStaticParams() {
   return [{ lang: "en-US" }, { lang: "de" }];
 }
-
 export default function Root({ children, params }) {
   return (
     <html lang={params.lang}>
