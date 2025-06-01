@@ -5,10 +5,14 @@ import Container from "@/components/Container";
 import CardCategory from "@/components/CardCategory";
 import Header from "@/components/Header";
 
-export default function Page({ params }: { params: { category: string } }) {
+export default async function Page({
+  params,
+}: {
+  params: { category: string };
+}) {
+  const { category } = await params;
   const posts = getBlogPosts().filter(
-    (post) =>
-      post.metadata.category.toLowerCase() === params.category.toLowerCase()
+    (post) => post.metadata.category.toLowerCase() === category.toLowerCase()
   );
 
   if (!posts?.length) {

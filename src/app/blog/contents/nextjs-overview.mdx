@@ -77,7 +77,6 @@ In addition, as the user navigates around the app, the router saves the result o
 
 ```jsx
 import Link from "next/link";
-
 <Link href={"/"}>Go Home</Link>;
 ```
 
@@ -85,7 +84,6 @@ import Link from "next/link";
 
 ```jsx
 import { useRouter } from "next/navigation";
-
 const router = useRouter();
 router.push("/contact");
 ```
@@ -94,7 +92,6 @@ router.push("/contact");
 
 ```jsx
 import { redirect } from "next/navigation";
-
 const user = await fetchUser(params.id);
 if (!user) {
   redirect("/login");
@@ -112,7 +109,6 @@ Now when we're using the dynamic routes, there's an optimization we can make to 
 ```jsx
 export async function generateStaticParams() {
   const posts = await getAllPosts();
-
   return posts.map((post) => ({ slug: post.slug }));
 }
 ```
