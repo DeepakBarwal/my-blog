@@ -69,3 +69,13 @@ export function formatDate(date: string, includeRelative = false) {
 
   return `${fullDate} (${formattedDate})`;
 }
+
+export function getTermsOfServices() {
+  return getMdxData(
+    path.join(process.cwd(), "src", "app", "terms-of-services")
+  );
+}
+
+export function getPrivacyPolicy() {
+  return getMdxData(path.join(process.cwd(), "src", "app", "privacy-policy"));
+}
