@@ -4,6 +4,7 @@ import Header from "@/components/Header";
 import Container from "@/components/Container";
 import { BreadcrumbWithCustomSeparator } from "@/components/Breadcrumb";
 import CustomMdx from "@/components/mdx";
+import ReportViews from "@/components/ReportViews";
 
 export async function generateStaticParams() {
   const posts = getBlogPosts();
@@ -26,6 +27,11 @@ export default async function Page({
 
   return (
     <>
+      <ReportViews
+        title={post.metadata.title}
+        category={post.metadata.category}
+        slug={post.slug}
+      />
       <Header>
         <Container>
           <BreadcrumbWithCustomSeparator
