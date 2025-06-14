@@ -5,17 +5,14 @@ import Link from "next/link";
 
 import {
   NavigationMenu,
-  NavigationMenuContent,
   NavigationMenuItem,
   NavigationMenuLink,
   NavigationMenuList,
-  NavigationMenuTrigger,
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
 import { cn } from "@/lib/utils";
 import { Icons } from "@/components/icons";
 import { ModeToggle } from "@/components/ui/mode-toggle";
-import { POSTS } from "@/lib/constants";
 
 export default function MainNav({ className }: { className?: string }) {
   return (
@@ -34,22 +31,6 @@ export default function MainNav({ className }: { className?: string }) {
       <NavigationMenu viewport={false}>
         <NavigationMenuList>
           <NavigationMenuItem>
-            <NavigationMenuTrigger>Posts</NavigationMenuTrigger>
-            <NavigationMenuContent>
-              <ul className="grid w-[400px] gap-2 md:w-[500px] md:grid-cols-2 lg:w-[600px]">
-                {POSTS.map((post) => (
-                  <ListItem
-                    key={post.title}
-                    title={post.title}
-                    href={post.href}
-                  >
-                    {post.description}
-                  </ListItem>
-                ))}
-              </ul>
-            </NavigationMenuContent>
-          </NavigationMenuItem>
-          <NavigationMenuItem>
             <NavigationMenuLink
               asChild
               className={navigationMenuTriggerStyle()}
@@ -66,25 +47,5 @@ export default function MainNav({ className }: { className?: string }) {
         </Link>
       </div>
     </div>
-  );
-}
-
-function ListItem({
-  title,
-  children,
-  href,
-  ...props
-}: React.ComponentPropsWithoutRef<"li"> & { href: string }) {
-  return (
-    <li {...props}>
-      <NavigationMenuLink asChild>
-        <Link href={href}>
-          <div className="text-sm leading-none font-medium">{title}</div>
-          <p className="text-muted-foreground line-clamp-2 text-sm leading-snug">
-            {children}
-          </p>
-        </Link>
-      </NavigationMenuLink>
-    </li>
   );
 }
