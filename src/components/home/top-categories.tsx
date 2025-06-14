@@ -15,16 +15,19 @@ export default function TopCategories() {
   if (isLoading) {
     return <TopCategoriesSkeleton />;
   }
+
+  const uniqueCategories = [...new Set(data?.map((item) => item.category))];
+
   return (
-    <div className="grid grid-cols-[repeat(auto-fill,minmax(100px,1fr))] gap-2">
-      {data?.map((category) => (
+    <div className="grid grid-cols-[repeat(auto-fill,minmax(120px,1fr))] gap-2">
+      {uniqueCategories?.map((category) => (
         <Button
-          key={category.slug}
+          key={category}
           variant={"secondary"}
           className="hover:scale-110 transition-all"
           asChild
         >
-          <Link href={`/blog/${category.category}`}>{category.category}</Link>
+          <Link href={`/blog/${category}`}>{category}</Link>
         </Button>
       ))}
     </div>
