@@ -30,13 +30,19 @@ export default async function AboutPage() {
               </p>
             </div>
             <p className="text-muted-foreground text-lg py-4">
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
-              eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut
-              enim ad minim veniam, quis nostrud exercitation ullamco laboris
-              nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in
-              reprehenderit in voluptate velit esse cillum dolore eu fugiat
-              nulla pariatur. Excepteur sint occaecat cupidatat non proident,
-              sunt in culpa qui officia deserunt mollit anim id est laborum
+              Full stack web developer who thrives on building sleek,
+              high-performance web applications from the ground up. With a
+              passion for both front-end flair and back-end brilliance, I craft
+              seamless user experiences powered by robust, scalable systems. My
+              toolbox is loaded with modern tech—think JavaScript, React,
+              Node.js, and databases like MongoDB and PostgreSQL—paired with a
+              knack for solving complex problems with clean, efficient code.
+              Whether it&apos;s pixel-perfect UI, lightning-fast APIs, or
+              bulletproof infrastructure, I bring creativity, grit, and a
+              get-it-done attitude to every project. I stay ahead of the curve,
+              constantly learning and adapting to the latest trends in web dev
+              to deliver cutting-edge solutions. Ready to build something epic?
+              Let&apos;s make the web a more awesome place together!
             </p>
           </div>
         </div>
