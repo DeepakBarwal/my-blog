@@ -26,7 +26,7 @@ export default function MainNav({ className }: { className?: string }) {
       )}
     >
       <Link href={"/"}>
-        <div className="flex items-center justify-between w-48">
+        <div className="flex items-center justify-between w-fit gap-2">
           <Icons.logo className="h-6 w-6" />
           <p>Deepak Barwal&apos;s Blog</p>
         </div>
