@@ -2,11 +2,13 @@
 
 import { useFormState } from "react-dom";
 import Link from "next/link";
-import { POSTS } from "@/lib/constants";
 import { Icons } from "@/components/icons";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { createSubscriber } from "@/lib/actions";
+import useSWR from "swr";
+import { fetcher, fetchUrl } from "@/lib/utils";
+import TopCategoriesSkeleton from "./skeleton/top-categories-skeleton";
 
 const initialState = {
   message: "",
@@ -15,6 +17,19 @@ const initialState = {
 
 export default function Footer() {
   const [state, dispatch] = useFormState(createSubscriber, initialState);
+
+  const { data, error, isLoading } = useSWR(fetchUrl, fetcher);
+
+  if (error) {
+    return <div>Failed to load</div>;
+  }
+
+  if (isLoading) {
+    return <TopCategoriesSkeleton />;
+  }
+
+  const uniqueCategories = [...new Set(data?.map((item) => item.category))];
+
 
   return (
     <footer className="bg-gray-100 py-8 dark:bg-gray-800 mt-10">
@@ -52,13 +67,13 @@ export default function Footer() {
           <div className="space-y-4">
             <h3 className="text-md font-semibold">Blog</h3>
             <ul className="space-y-2 text-sm">
-              {POSTS.map((post) => (
-                <li key={post.title}>
+              {uniqueCategories?.slice(0,4)?.map((category) => (
+                <li key={category}>
                   <Link
-                    href={post.href}
+                    href={`/blog/${category}`}
                     className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
                   >
-                    {post.title}
+                    {category}
                   </Link>
                 </li>
               ))}
